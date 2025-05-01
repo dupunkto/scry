@@ -1,6 +1,9 @@
 #!/bin/bash
 
-export TARGET=app.py
+CTX=nov
+TARGET=app.py
+TAG=ghcr.io/dupunkto/scry
+
 export ROOT=tmp
 export TOKEN="wowziesdebugboobsyey"
 
@@ -8,8 +11,17 @@ provision() {
   git init $ROOT
 }
 
+build() {
+	docker --context=$CTX build -t $TAG .
+}
+
 serve() {
   python $TARGET
+}
+
+deploy() {
+	echo "docker push $TAG" | ssh nov
+	echo "/volume1/docker/bootstrap.sh scry" | ssh nov
 }
 
 clean() {
