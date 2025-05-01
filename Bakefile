@@ -1,0 +1,17 @@
+#!/bin/bash
+
+export TARGET=app.py
+export ROOT=tmp
+export TOKEN="wowziesdebugboobsyey"
+
+provision() {
+  git init $ROOT
+}
+
+serve() {
+  python $TARGET
+}
+
+clean() {
+  rm -rf $ROOT
+}
