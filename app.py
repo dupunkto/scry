@@ -1,4 +1,4 @@
-from flask import Flask, Response, abort, request, jsonify
+from flask import Flask, Response, request
 
 import subprocess
 import os
@@ -11,15 +11,21 @@ def index():
 
 @app.route("/track/<token>", methods=["POST"])
 def track(token):
-    if token == os.getenv("TOKEN"):
+    if token != os.getenv("TOKEN"):
+        return text("Forbidden.", 403)
+    else:
         data = request.json
         change = data.get("change")
 
-        if change:
+        if not change:
+            return text("Bad request.", 400)
+        else:
             slug = change.get("slug")
             source = change.get("source_code")
             
-            if slug and source:
+            if not slug or not source:
+                return text("Bad request.", 400)
+            else:
                 if ".." in slug or "'" in slug:
                     return text("Bad request.", 400)
                 else:
@@ -27,29 +33,24 @@ def track(token):
                     path = os.path.join(repo, f"{slug}.ex")
 
                     try:
-                        with open(path, 'r') as ref:
+                        with open(path, "r") as ref:
                             old_source = ref.read()
                     except FileNotFoundError:
-                        old_source = ""
+                        old_source = None
 
-                    with open(path, 'w+') as ref:
+                    with open(path, "w") as ref:
                         ref.write(source)
 
                     if old_source.strip() == source.strip():
                         return text("Not changed.", 200)
                     else:
-                        subprocess.check_output(f"git add . && git commit -m 'Edit {slug}'", cwd=repo, shell=True)
+                        subprocess.check_output(f"git add . && git commit -m 'Edited {slug}'", cwd=repo, shell=True)
                         return text("Committed.", 200)
-            else:
-                return text("Bad request.", 400)
-        else:
-            return text("Bad request.", 400)
-    else:
-        return text("Forbidden.", 403)
+            
+        
 
 def text(message, status=200):
     return Response(message, mimetype="text/plain", status=status)
 
-# Fucking Python. Doe ff normaal man.
 if __name__ == "__main__":
     app.run(debug=True, port=4000)
