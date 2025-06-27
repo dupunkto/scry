@@ -1,37 +1,37 @@
 from flask import Flask, Response, request
-
 import subprocess
 import os
 
 app = Flask(__name__)
 
+def text(message, status=200):
+    return Response(message, mimetype="text/plain", status=status)
+
 @app.route("/")
 def index():
     return text("words of prophets are\nwritten on the subway walls.")
 
-@app.route("/track/<slug>", methods=["POST"])
-def track(slug):
+@app.route("/track/<file>", methods=["POST"])
+def track(file):
     data = request.json
     token = data.get("token")
-    
+
     if token != os.getenv("TOKEN"):
         return text("Forbidden.", 403)
-    
-    change = data.get("change")
 
-    if not change: 
+    change = data.get("change")
+    if not change:
         return text("Bad request.", 400)
 
     source = change.get("source_code")
-    
-    if not slug or not source:
+    if not file or not source:
         return text("Bad request.", 400)
-    
-    if ".." in slug or "'" in slug:
+
+    if ".." in file or "'" in file:
         return text("Bad request.", 400)
 
     repo = os.getenv("ROOT")
-    path = os.path.join(repo, f"{slug}.ex")
+    path = os.path.join(repo, file)
 
     try:
         with open(path, "r") as ref:
@@ -42,16 +42,62 @@ def track(slug):
     with open(path, "w") as ref:
         ref.write(source)
 
-    if old_source.strip() == source.strip():
+    if old_source and old_source.strip() == source.strip():
         return text("Not changed.", 200)
-    else:
-        subprocess.check_output(f"git add . && git commit -m 'Edited {slug}'", cwd=repo, shell=True)
-        return text("Committed.", 200)
-        
-        
 
-def text(message, status=200):
-    return Response(message, mimetype="text/plain", status=status)
+    subprocess.check_output(
+        f"git add . && git commit -m 'Edited {file}'",
+        cwd=repo,
+        shell=True
+    )
+    return text("Committed.", 200)
+
+@app.route("/squash/<file>", methods=["POST"])
+def squash(file):
+    data = request.json
+    token = data.get("token")
+
+    if token != os.getenv("TOKEN"):
+        return text("Forbidden.", 403)
+
+    message = data.get("message")
+    if not message or not file or ".." in file or "'" in file:
+        return text("Bad request.", 400)
+
+    repo = os.getenv("ROOT")
+
+    try:
+        last_squash_commit = subprocess.check_output(
+            ["git", "log", "--grep=squash", "--format=%H", "-n1", "--", file],
+            cwd=repo
+        ).decode().strip()
+    except subprocess.CalledProcessError:
+        last_squash_commit = ""
+
+    if last_squash_commit:
+        reset_target = subprocess.check_output(
+            ["git", "rev-parse", f"{last_squash_commit}^"],
+            cwd=repo
+        ).decode().strip()
+    else:
+        first_commit = subprocess.check_output(
+            ["git", "rev-list", "--max-parents=0", "HEAD"],
+            cwd=repo
+        ).decode().strip()
+        reset_target = f"{first_commit}^"
+
+    subprocess.run(
+        ["git", "reset", "--soft", reset_target, "--", file],
+        cwd=repo,
+        check=True
+    )
+    subprocess.run(
+        ["git", "commit", "-m", f"(squash) {message}", "--", file],
+        cwd=repo,
+        check=True
+    )
+
+    return text(f"Squashed changes for {file}.", 200)
 
 if __name__ == "__main__":
     app.run(debug=True, port=4000)
