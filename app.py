@@ -66,28 +66,25 @@ def squash(file):
 
     repo = os.getenv("ROOT")
 
-    try:
-        last_squash_commit = subprocess.check_output(
-            ["git", "log", "--grep=squash", "--format=%H", "-n1", "--", file],
-            cwd=repo
-        ).decode().strip()
-    except subprocess.CalledProcessError:
-        last_squash_commit = ""
+    last_squash_commit = subprocess.check_output(
+        ["git", "log", "--grep=squash", "--format=%H", "-n1", "--", file],
+        cwd=repo
+    ).decode().strip()
 
     if last_squash_commit:
-        reset_target = subprocess.check_output(
+        target = subprocess.check_output(
             ["git", "rev-parse", f"{last_squash_commit}^"],
             cwd=repo
         ).decode().strip()
     else:
-        first_commit = subprocess.check_output(
+        initial_commit = subprocess.check_output(
             ["git", "rev-list", "--max-parents=0", "HEAD"],
             cwd=repo
         ).decode().strip()
-        reset_target = f"{first_commit}^"
+        target = f"{initial_commit}^"
 
     subprocess.run(
-        ["git", "reset", "--soft", reset_target, "--", file],
+        ["git", "reset", "--soft", target, "--", file],
         cwd=repo,
         check=True
     )
@@ -97,7 +94,7 @@ def squash(file):
         check=True
     )
 
-    return text(f"Squashed changes for {file}.", 200)
+    return text(f"Squashed.", 200)
 
 if __name__ == "__main__":
     app.run(debug=True, port=4000)
