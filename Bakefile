@@ -12,16 +12,15 @@ provision() {
 }
 
 build() {
-	docker --context=$CTX build -t $TAG .
+	lift build
+}
+
+deploy() {
+  lift deploy
 }
 
 serve() {
   python $TARGET
-}
-
-deploy() {
-	echo "docker push $TAG" | ssh nov
-	echo "/volume1/docker/bootstrap.sh scry" | ssh nov
 }
 
 clean() {
