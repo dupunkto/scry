@@ -19,11 +19,11 @@ def track(file):
     if token != os.getenv("TOKEN"):
         return text("Forbidden.", 403)
 
-    change = data.get("change")
-    if not change:
+    content = data.get("content")
+    if not content:
         return text("Bad request.", 400)
 
-    source = change.get("source_code")
+    source = content.get("source_code")
     if not file or not source:
         return text("Bad request.", 400)
 
