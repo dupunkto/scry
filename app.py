@@ -11,6 +11,23 @@ def text(message, status=200):
 def index():
     return text("words of prophets are\nwritten on the subway walls.")
 
+@app.route("/webhook/<token>", methods=["POST"])
+def webhook(token):
+    if token != os.getenv("TOKEN"):
+        return text("Forbidden.", 403)
+
+    data = request.json
+
+    content = data.get("content")
+    if not content:
+        return text("Bad request.", 400)
+
+    file = content.get("slug")
+    if not file:
+        return text("Bad request.", 400)
+
+    return handle_track(file, data)
+
 @app.route("/track/<file>", methods=["POST"])
 def track(file):
     data = request.json
@@ -19,6 +36,9 @@ def track(file):
     if token != os.getenv("TOKEN"):
         return text("Forbidden.", 403)
 
+    return handle_track(file, data)
+
+def handle_track(file, data):
     content = data.get("content")
     if not content:
         return text("Bad request.", 400)
