@@ -1,0 +1,4 @@
+name: scry
+host: nov
+image: dupunkto/scry
+registry: ghcr.io
