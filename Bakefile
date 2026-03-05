@@ -1,8 +1,6 @@
 #!/bin/bash
 
-CTX=nov
 TARGET=app.py
-TAG=ghcr.io/dupunkto/scry
 
 export ROOT=tmp
 export TOKEN="wowziesdebugboobsyey"
