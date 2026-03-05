@@ -1,4 +1,4 @@
-from flask import Flask, Response, request
+from flask import Flask, Response, request, send_from_directory
 import subprocess
 import os
 
@@ -9,7 +9,7 @@ def text(message, status=200):
 
 @app.route("/")
 def index():
-    return text("words of prophets are\nwritten on the subway walls.")
+    return send_from_directory(".", "index.html")
 
 @app.route("/webhook/<token>", methods=["POST"])
 def webhook(token):
