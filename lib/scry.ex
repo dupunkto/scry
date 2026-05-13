@@ -34,7 +34,7 @@ defmodule Scry do
 
     - `ROOT`: the path to the internal git repository. Make sure the path is
       pointing to a writable non-bare repo that has already been initialized.
-      Scry does not auto-initialize non-existing repos.
+      Scry does not auto-initialize non-existant repos.
 
     - `TOKEN`: the token to be passed as `Authorization` header for API calls,
       or as path segment in webhook requests. Preferably cryptographically secure.
@@ -56,9 +56,9 @@ defmodule Scry do
 
   @doc """
   Track a new change to `object` with content `source`.
-
-  The diff between the current state and new state is automatically
-  calculated. If the files differ, a new edit will be created.
+  
+  Calculates the diff between the current state and new source. If
+  states differ, a new edit will be created.
   """
   @doc group: "Version control"
   @spec track(object(), binary()) :: {:ok, :edited | :unchanged} | {:error, term()}
@@ -101,11 +101,11 @@ defmodule Scry do
   Squash pending edits to `object` into a single revision.
 
   Finds the last revision to touch `object`, and squashes all edits
-  after into a single revision with description `message`.
+  after that into a single revision with description `message`.
 
   ## Example
 
-  Suppose the following history with three objects
+  Suppose the following git history with three objects
   (`hello.ex`, `other.ex`, and `world.ex`):
 
       (edit) hello.ex
@@ -258,8 +258,23 @@ defmodule Scry do
     end
   end
 
+  @typedoc """
+  A map representing the revision history for an object.
+
+  Has two keys:
+
+    - `:revisions`: all revisions to `object` in reverse chronological order,
+      each as `%{sha, timestamp, message, diff}` (see `t:revision/0`).
+
+    - `:pending`: the number of edits made since the last revision (i.e.
+      pending changes that have not been squashed into a revision yet).
+
+  """
   @type history :: %{revisions: [revision()], pending: non_neg_integer()}
 
+  @typedoc """
+  A map representing a single revision for an object.
+  """
   @type revision :: %{
           required(:sha) => String.t(),
           required(:timestamp) => integer(),
@@ -270,14 +285,7 @@ defmodule Scry do
   @doc """
   Return the revision history for `object`.
 
-  Returns a map with two keys:
-
-  - `:revisions`: all revisions to `object` in reverse chronological order,
-    each as `%{sha, timestamp, message, diff}` (see `t:revision/0`).
-
-  - `:pending`: the number of edits made since the last revision (i.e.
-    pending changes that have not been squashed into a revision yet).
-
+  See `t:history/0` for the return type.
   """
   @doc group: "Querying"
   @spec history(object()) :: {:ok, history()} | {:error, term()}
@@ -320,7 +328,7 @@ defmodule Scry do
   end
 
   @typedoc """
-  Hash reference uniquely identifying a single edit or revision.
+  Hash uniquely identifying a single edit or revision.
   """
   @type sha :: String.t()
 
