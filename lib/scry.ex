@@ -217,16 +217,16 @@ defmodule Scry do
   @doc """
   Delete tracking history for `object`.
 
-  The file is removed from listings and `source/1` and `history/1` will
-  return nothing. When tracked again using `track/2`, older history
-  will not resurface.
+  The object is removed from listings and `source/1` and `history/1` will
+  return errors, as if the object has never existed. When tracked again using
+  `track/2`, older history will not resurface.
 
   > #### However: {: .neutral}
   >
   > Internally, prior history of the file is preserved and a commit
   > titled '(delete) object' is created. Therefore, this function is unfit
   > for deleting sensitive information. Consider manually editing git
-  > history.
+  > history instead.
   """
   @doc group: "Version control"
   @spec delete(object()) :: {:ok, :deleted} | {:error, term()}
@@ -284,6 +284,8 @@ defmodule Scry do
   def history(object) when is_binary(object) do
     with :ok <- validate_path(object),
          {:ok, entries} <- Git.log_entries(object) do
+      entries = Enum.take_while(entries, &(not delete?(&1, object)))
+
       revisions =
         entries
         |> Enum.filter(&revision?/1)
@@ -311,6 +313,7 @@ defmodule Scry do
 
   defp edit?(~m{subject}), do: String.starts_with?(subject, "(edit) ")
   defp revision?(~m{subject}), do: String.starts_with?(subject, "(revision) ")
+  defp delete?(~m{subject}, object), do: subject == "(delete) #{object}"
 
   defp extract_message(subject) do
     subject |> String.split(" ", parts: 3) |> Enum.at(2, "")

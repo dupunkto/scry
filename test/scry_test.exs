@@ -185,6 +185,12 @@ defmodule ScryTest do
     test "returns :enoent for an unknown object" do
       assert {:error, :enoent} = Scry.source("missing.ex")
     end
+
+    test "returns :enoent after a (delete) commit" do
+      {:ok, :edited} = Scry.track("hello.ex", "v1")
+      {:ok, :deleted} = Scry.delete("hello.ex")
+      assert {:error, :enoent} = Scry.source("hello.ex")
+    end
   end
 
   describe "history/1" do
@@ -239,6 +245,20 @@ defmodule ScryTest do
 
       assert {:ok, %{revisions: [], pending: 2}} = Scry.history("hello.ex")
       assert {:ok, %{revisions: [], pending: 2}} = Scry.history("other.ex")
+    end
+
+    test "ignores everything before a (delete) commit" do
+      {:ok, :edited} = Scry.track("hello.ex", "v1")
+      {:ok, :squashed} = Scry.squash("hello.ex", "First.")
+      {:ok, :edited} = Scry.track("hello.ex", "v2")
+      {:ok, :deleted} = Scry.delete("hello.ex")
+
+      assert {:ok, %{revisions: [], pending: 0}} = Scry.history("hello.ex")
+
+      {:ok, :edited} = Scry.track("hello.ex", "v3")
+      {:ok, :edited} = Scry.track("hello.ex", "v4")
+
+      assert {:ok, %{revisions: [], pending: 2}} = Scry.history("hello.ex")
     end
   end
 
