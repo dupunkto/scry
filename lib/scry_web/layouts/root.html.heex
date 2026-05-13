@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content={get_csrf_token()} />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- Google, please don't mess with my lovingly handcrafted HTML -->
+    <meta name="googlebot" content="notranslate" />
+    <meta name="generator" content={"Phoenix #{Application.spec(:phoenix, :vsn)}"} />
+
+    <.live_title default="Scry">
+      {assigns[:page_title]}
+    </.live_title>
+
+    <link rel="canonical" href="https://scry.dupunkto.org" />
+    <link rel="stylesheet" href="https://cdn.geheimesite.nl/landing.css" type="text/css" />
+  </head>
+  <body>
+    {@inner_content}
+  </body>
+</html>

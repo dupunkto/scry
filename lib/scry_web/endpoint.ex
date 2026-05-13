@@ -1,4 +1,5 @@
 defmodule ScryWeb.Endpoint do
+  @moduledoc false
   use Phoenix.Endpoint, otp_app: :scry
 
   # The session will be stored in the cookie and signed,
@@ -31,7 +32,6 @@ defmodule ScryWeb.Endpoint do
     socket "/phoenix/live_reload/socket", Phoenix.LiveReloader.Socket
     plug Phoenix.LiveReloader
     plug Phoenix.CodeReloader
-    plug Phoenix.Ecto.CheckRepoStatus, otp_app: :scry
   end
 
   plug Plug.RequestId

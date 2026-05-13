@@ -1,4 +1,5 @@
 defmodule ScryWeb.Router do
+  @moduledoc false
   use ScryWeb, :router
 
   pipeline :browser do
@@ -17,11 +18,10 @@ defmodule ScryWeb.Router do
   scope "/", ScryWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    get "/", LandingController, :landing
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", ScryWeb do
-  #   pipe_through :api
-  # end
+  scope "/api", ScryWeb do
+    pipe_through :api
+  end
 end
