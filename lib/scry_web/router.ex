@@ -24,8 +24,10 @@ defmodule ScryWeb.Router do
   scope "/api", ScryWeb do
     pipe_through :api
 
+    post "/track/:object", APIController, :track
+    post "/merge/:object", APIController, :merge
+
+    # Here for legacy reasons (backward-compatibility, yay!)
     post "/webhook/:token", APIController, :webhook
-    post "/track/:ref", APIController, :track
-    post "/squash/:ref", APIController, :squash
   end
 end

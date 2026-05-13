@@ -16,32 +16,38 @@ defmodule ScryWeb.APIController do
   # of Scry (that have not been published) and the version control system used
   # in Vik before that. Prefer to use the /track endpoint if possible.
 
-  def webhook(conn, %{"content" => %{"slug" => ref, "source_code" => source}}) do
-    case Scry.track(ref, source) do
+  def webhook(conn, %{"content" => %{"slug" => object, "source_code" => source}}) do
+    case Scry.track(object, source) do
       {:ok, status} -> serve_status(conn, status)
       {:error, reason} -> serve_error(conn, reason)
     end
   end
 
-  def webhook(conn, _params), do: serve_error(conn, :bad_request)
+  def webhook(conn, _params) do
+    serve_error(conn, :bad_request)
+  end
 
-  def track(conn, %{"ref" => ref, "source_code" => source}) do
-    case Scry.track(ref, source) do
+  def track(conn, %{"object" => object, "source_code" => source}) do
+    case Scry.track(object, source) do
       {:ok, status} -> serve_status(conn, status)
       {:error, reason} -> serve_error(conn, reason)
     end
   end
 
-  def track(conn, _params), do: serve_error(conn, :bad_request)
+  def track(conn, _params) do
+    serve_error(conn, :bad_request)
+  end
 
-  def squash(conn, %{"ref" => ref, "message" => message}) do
-    case Scry.squash(ref, message) do
+  def merge(conn, %{"object" => object, "message" => message}) do
+    case Scry.merge(object, message) do
       {:ok, status} -> serve_status(conn, status)
       {:error, reason} -> serve_error(conn, reason)
     end
   end
 
-  def squash(conn, _params), do: serve_error(conn, :bad_request)
+  def merge(conn, _params) do
+    serve_error(conn, :bad_request)
+  end
 
   # Helpers
 
