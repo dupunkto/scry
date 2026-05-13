@@ -40,6 +40,13 @@ defmodule Scry.Git do
     end
   end
 
+  def log_subjects(file) do
+    case System.cmd("git", ["log", "--format=%s", "--", file], cd: root()) do
+      {output, 0} -> {:ok, String.split(output, "\n", trim: true)}
+      {output, _} -> {:error, String.trim(output)}
+    end
+  end
+
   def find_initial_commit do
     case System.cmd("git", ["rev-list", "--max-parents=0", "HEAD"], cd: root()) do
       {output, 0} -> {:ok, String.trim(output)}

@@ -49,6 +49,17 @@ defmodule ScryWeb.APIController do
     serve_error(conn, :bad_request)
   end
 
+  def history(conn, %{"object" => object}) do
+    case Scry.history(object) do
+      {:ok, result} -> json(conn, result)
+      {:error, reason} -> serve_error(conn, reason)
+    end
+  end
+
+  def history(conn, _params) do
+    serve_error(conn, :bad_request)
+  end
+
   # Helpers
 
   defp serve_status(conn, status) do

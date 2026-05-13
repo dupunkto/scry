@@ -44,6 +44,8 @@ defmodule Scry do
 
   defp root, do: Application.fetch_env!(:scry, :root)
 
+  import Structo
+
   @doc """
   Track a new change to `object` with content `source`.
 
@@ -115,6 +117,40 @@ defmodule Scry do
       {:ok, :merged}
     end
   end
+
+  @type history :: %{revisions: [String.t()], pending: boolean()}
+
+  @doc """
+  Return the revision history for `object`.
+
+  Returns a map with two keys:
+
+  - `:revisions`: the messages of all revisions to `object`, in
+    reverse chronological order.
+
+  - `:pending`: indicates whether the most recent change to `object`
+    is a pending edit (aka whether there are changes that have not
+    been merged into a revision yet).
+
+  """
+  @spec history(Path.t()) :: {:ok, history()} | {:error, term()}
+  def history(object) when is_binary(object) do
+    with :ok <- validate_path(object),
+         {:ok, subjects} <- Git.log_subjects(object) do
+      revisions =
+        subjects
+        |> Enum.filter(&String.starts_with?(&1, "(revision) "))
+        |> Enum.map(fn subject ->
+          subject |> String.split(" ", parts: 3) |> Enum.at(2, "")
+        end)
+
+      pending =
+        case subjects do
+          [head | _] -> not String.starts_with?(head, "(revision) ")
+          [] -> false
+        end
+
+      {:ok, ~m{revisions, pending}}
     end
   end
 

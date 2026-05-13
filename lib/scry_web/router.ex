@@ -26,6 +26,7 @@ defmodule ScryWeb.Router do
 
     post "/track/:object", APIController, :track
     post "/merge/:object", APIController, :merge
+    get "/history/:object", APIController, :history
 
     # Here for legacy reasons (backward-compatibility, yay!)
     post "/webhook/:token", APIController, :webhook
