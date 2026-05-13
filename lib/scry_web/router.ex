@@ -23,5 +23,9 @@ defmodule ScryWeb.Router do
 
   scope "/api", ScryWeb do
     pipe_through :api
+
+    post "/webhook/:token", APIController, :webhook
+    post "/track/:ref", APIController, :track
+    post "/squash/:ref", APIController, :squash
   end
 end
