@@ -12,6 +12,10 @@ defmodule ScryWeb.APIController do
     end
   end
 
+  # The webhook endpoint exists to be backward-compatible with earlier versions
+  # of Scry (that have not been published) and the version control system used
+  # in Vik before that. Prefer to use the /track endpoint if possible.
+
   def webhook(conn, %{"content" => %{"slug" => ref, "source_code" => source}}) do
     case Scry.track(ref, source) do
       {:ok, status} -> serve_status(conn, status)
