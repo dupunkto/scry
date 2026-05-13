@@ -7,35 +7,41 @@ import Config
 # any compile-time configuration in here, as it won't be applied.
 # The block below contains prod specific runtime configuration.
 
-case System.get_env("AUTH_PROVIDER", "basic") do
-  "basic" ->
-    config :scry, auth: :basic
-    
-    if password = System.get_env("AUTH_PASSWORD") do
-      config :scry, password: password
-    else
-      raise """
-      The configured auth provider was set to 'basic', but no password
-      was configured. Either export AUTH_PASSWORD in the environment, or
-      set AUTH_PROVIDER to 'nym' instead.
-      """
-    end
+if config_env() != :test do
+  config :scry,
+    token: System.get_env("TOKEN"),
+    root: System.get_env("ROOT")
 
-  "nym" ->
-    config :scry, auth: :nym
+  case System.get_env("AUTH_PROVIDER", "basic") do
+    "basic" ->
+      config :scry, auth: :basic
 
-    if endpoint = System.get_env("AUTH_ENDPOINT") do
-      config :nym, on: endpoint
-    else
-      raise """
-      The configured auth provider was set to 'nym', but no endpoint
-      was configured. Either export AUTH_ENDPOINT in the environment, or
-      set AUTH_PROVIDER to 'basic' instead.
-      """
-    end
+      if password = System.get_env("AUTH_PASSWORD") do
+        config :scry, password: password
+      else
+        raise """
+        The configured auth provider was set to 'basic', but no password
+        was configured. Either export AUTH_PASSWORD in the environment, or
+        set AUTH_PROVIDER to 'nym' instead.
+        """
+      end
 
-  provider ->
-    raise "Unknown auth provider '#{provider}'."
+    "nym" ->
+      config :scry, auth: :nym
+
+      if endpoint = System.get_env("AUTH_ENDPOINT") do
+        config :nym, on: endpoint
+      else
+        raise """
+        The configured auth provider was set to 'nym', but no endpoint
+        was configured. Either export AUTH_ENDPOINT in the environment, or
+        set AUTH_PROVIDER to 'basic' instead.
+        """
+      end
+
+    provider ->
+      raise "Unknown auth provider '#{provider}'."
+  end
 end
 
 # ## Using releases
@@ -50,10 +56,6 @@ end
 if System.get_env("PHX_SERVER") do
   config :scry, ScryWeb.Endpoint, server: true
 end
-
-config :scry,
-  token: System.get_env("TOKEN"),
-  root: System.get_env("ROOT")
 
 if config_env() == :prod do
   # The secret key base is used to sign/encrypt cookies and other secrets.
