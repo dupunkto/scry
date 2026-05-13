@@ -25,7 +25,7 @@ defmodule ScryWeb.Router do
     pipe_through :api
 
     post "/track/:object", APIController, :track
-    post "/merge/:object", APIController, :merge
+    post "/squash/:object", APIController, :squash
     get "/history/:object", APIController, :history
 
     # Here for legacy reasons (backward-compatibility, yay!)

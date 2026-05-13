@@ -38,14 +38,14 @@ defmodule ScryWeb.APIController do
     serve_error(conn, :bad_request)
   end
 
-  def merge(conn, %{"object" => object, "message" => message}) do
-    case Scry.merge(object, message) do
+  def squash(conn, %{"object" => object, "message" => message}) do
+    case Scry.squash(object, message) do
       {:ok, status} -> serve_status(conn, status)
       {:error, reason} -> serve_error(conn, reason)
     end
   end
 
-  def merge(conn, _params) do
+  def squash(conn, _params) do
     serve_error(conn, :bad_request)
   end
 

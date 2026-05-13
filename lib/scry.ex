@@ -23,8 +23,8 @@ defmodule Scry do
   Scry is designed to 'fire-and-forget'. An example use-case would be a text editor
   that sends its contents over the wirte on every save, or on a debounce. This naturally
   results in many small edits to an object, which are internally represented as commits
-  titled `(edit) object` (incremental commits). At the end of an edit session, `merge/2`
-  can be called to merge all pending edits into a revision, which is internally
+  titled `(edit) object` (incremental commits). At the end of an edit session, `squash/2`
+  can be called to squash all pending edits into a revision, which is internally
   represented by squashing the relevant commits into a single commit titled
   `(revision) object <message>` (squashed commits).
   
@@ -67,9 +67,9 @@ defmodule Scry do
   end
 
   @doc """
-  Merge pending edits to `object` into a single revision.
+  Squash pending edits to `object` into a single revision.
 
-  Finds the last revision to touch `object`, and merges all edits
+  Finds the last revision to touch `object`, and squashes all edits
   after into a single revision with description `message`.
 
   ## Example
@@ -86,7 +86,7 @@ defmodule Scry do
       (edit) other.ex
       (edit) world.ex
 
-  Calling `merge("world.ex", "Minor changes")` would produce the
+  Calling `squash("world.ex", "Minor changes")` would produce the
   following history:
 
       (edit) hello.ex
@@ -97,7 +97,7 @@ defmodule Scry do
       (edit) other.ex
       (revision) <world.ex> Minor changes
 
-  Calling `merge("hello.ex", "Major changes")`, instead, would produce:
+  Calling `squash("hello.ex", "Major changes")`, instead, would produce:
 
       (edit) other.ex
       (revision) <world.ex> Initial version of world editor.
@@ -108,13 +108,13 @@ defmodule Scry do
       (revision) <hello.ex> Major changes.
 
   """
-  @spec merge(Path.t(), String.t()) :: {:ok, :merged} | {:error, term()}
-  def merge(object, message) when is_binary(object) and is_binary(message) do
+  @spec squash(Path.t(), String.t()) :: {:ok, :squashed} | {:error, term()}
+  def squash(object, message) when is_binary(object) and is_binary(message) do
     with :ok <- validate_path(object),
-         {:ok, target} <- resolve_merge_target(object),
+         {:ok, target} <- resolve_squash_target(object),
          :ok <- Git.reset_soft(target, object),
          :ok <- Git.commit_file("(revision) <#{object}> #{message}", object) do
-      {:ok, :merged}
+      {:ok, :squashed}
     end
   end
 
@@ -154,7 +154,7 @@ defmodule Scry do
     end
   end
 
-  defp resolve_merge_target(object) do
+  defp resolve_squash_target(object) do
     case Git.find_last_commit("revision", object) do
       {:ok, ""} ->
         with {:ok, initial} <- Git.find_initial_commit(), do: {:ok, "#{initial}^"}
