@@ -32,9 +32,12 @@ defmodule Scry do
 
   Configure the following environment variables:
 
-      - `ROOT`: a path to a writable bare repo that has already been created.
-      - `TOKEN`: the token to be passed as `Authorization` header for API calls,
-      or as path segment in webhook requests.
+    - `ROOT`: the path to the internal git repository. Make sure the path is
+      pointing to a writable non-bare repo that has already been initialized.
+      Scry does not auto-initialize non-existing repos.
+
+    - `TOKEN`: the token to be passed as `Authorization` header for API calls,
+      or as path segment in webhook requests. Preferably cryptographically secure.
 
   A prebuilt docker image is available at
   [ghcr.io/dupunkto/scry](https://github.com/dupunkto/scry/pkgs/container/scry).
@@ -46,13 +49,19 @@ defmodule Scry do
 
   import Structo
 
+  @typedoc """
+  Slug uniquely identifying a tracked file.
+  """
+  @type object :: String.t()
+
   @doc """
   Track a new change to `object` with content `source`.
 
   The diff between the current state and new state is automatically
   calculated. If the files differ, a new edit will be created.
   """
-  @spec track(Path.t(), binary()) :: {:ok, :edited | :unchanged} | {:error, term()}
+  @doc group: "Version control"
+  @spec track(object(), binary()) :: {:ok, :edited | :unchanged} | {:error, term()}
   def track(object, source) when is_binary(object) and is_binary(source) do
     with :ok <- validate_path(object),
          path = Path.join(root(), object),
@@ -63,6 +72,28 @@ defmodule Scry do
     else
       {:error, :unchanged} -> {:ok, :unchanged}
       {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp validate_path(object) do
+    cond do
+      String.contains?(object, "..") -> {:error, :illegal}
+      String.contains?(object, "'") -> {:error, :illegal}
+      true -> :ok
+    end
+  end
+
+  defp validate_changed(path, patch) do
+    if File.exists?(path) do
+      with {:ok, contents} <- File.read(path) do
+        if String.trim(contents) == String.trim(patch) do
+          {:error, :unchanged}
+        else
+          :ok
+        end
+      end
+    else
+      :ok
     end
   end
 
@@ -108,84 +139,203 @@ defmodule Scry do
       (revision) <hello.ex> Major changes.
 
   """
-  @spec squash(Path.t(), String.t()) :: {:ok, :squashed} | {:error, term()}
+  @doc group: "Version control"
+  @spec squash(object(), String.t()) :: {:ok, :squashed} | {:error, term()}
   def squash(object, message) when is_binary(object) and is_binary(message) do
     with :ok <- validate_path(object),
-         {:ok, target} <- resolve_squash_target(object),
-         :ok <- Git.reset_soft(target, object),
-         :ok <- Git.commit_file("(revision) <#{object}> #{message}", object) do
+         {:ok, saved} <- File.read(Path.join(root(), object)),
+         {:ok, boundary} <- find_boundary(object),
+         {:ok, head_ref} <- Git.head_ref(),
+         {:ok, revision} <- rewrite(object, message, saved, boundary),
+         :ok <- Git.update_ref(head_ref, revision),
+         :ok <- Git.reset_hard(revision) do
       {:ok, :squashed}
     end
   end
 
-  @type history :: %{revisions: [String.t()], pending: boolean()}
+  defp find_boundary(object) do
+    case Git.find_last_commit("revision", object) do
+      {:ok, ""} -> {:ok, nil}
+      {:ok, sha} -> {:ok, sha}
+      err -> err
+    end
+  end
+
+  defp rewrite(object, message, saved, boundary) do
+    Git.with_index(fn index ->
+      with :ok <- Git.index_read_tree(index, boundary),
+           {:ok, commits} <- Git.commits_since(boundary),
+           {:ok, head} <- replay(index, commits, object, boundary),
+           {:ok, blob} <- Git.hash_blob(saved),
+           :ok <- Git.index_add(index, object, blob, "100644"),
+           {:ok, tree} <- Git.index_write_tree(index) do
+        Git.commit_tree(tree, head, "(revision) <#{object}> #{message}")
+      end
+    end)
+  end
+
+  defp replay(index, commits, object, boundary) do
+    Enum.reduce_while(commits, {:ok, boundary}, fn sha, {:ok, parent} ->
+      case copy_commit(index, sha, object, parent) do
+        {:ok, new_head} -> {:cont, {:ok, new_head}}
+        {:error, _} = err -> {:halt, err}
+      end
+    end)
+  end
+
+  defp copy_commit(index, sha, object, parent) do
+    with {:ok, files} <- Git.changed_files(sha) do
+      if Enum.any?(files, fn {_status, f} -> f == object end) do
+        {:ok, parent}
+      else
+        with :ok <- apply_to_index(index, sha, files),
+             {:ok, tree} <- Git.index_write_tree(index),
+             {:ok, info} <- Git.show_info(sha) do
+          Git.commit_tree(tree, parent, info.subject)
+        end
+      end
+    end
+  end
+
+  defp apply_to_index(index, sha, files) do
+    Enum.reduce_while(files, :ok, fn entry, _acc ->
+      case apply_entry(index, sha, entry) do
+        :ok -> {:cont, :ok}
+        {:error, _} = err -> {:halt, err}
+      end
+    end)
+  end
+
+  defp apply_entry(index, _sha, {"D", file}), do: Git.index_remove(index, file)
+
+  defp apply_entry(index, sha, {_status, file}) do
+    with {:ok, %{mode: mode, blob: blob}} <- Git.tree_entry(sha, file) do
+      Git.index_add(index, file, blob, mode)
+    end
+  end
+
+  @doc """
+  Delete tracking history for `object`.
+
+  The file is removed from listings and `source/1` and `history/1` will
+  return nothing. When tracked again using `track/2`, older history
+  will not resurface.
+
+  > #### However: {: .neutral}
+  >
+  > Internally, prior history of the file is preserved and a commit
+  > titled '(delete) object' is created. Therefore, this function is unfit
+  > for deleting sensitive information. Consider manually editing git
+  > history.
+  """
+  @doc group: "Version control"
+  @spec delete(object()) :: {:ok, :deleted} | {:error, term()}
+  def delete(object) when is_binary(object) do
+    with :ok <- validate_path(object),
+         :ok <- Git.remove_file(object),
+         :ok <- Git.commit_file("(delete) #{object}", object) do
+      {:ok, :deleted}
+    end
+  end
+
+  @doc """
+  Return a listing of all tracked objects.
+  """
+  @doc group: "Querying"
+  @spec list() :: {:ok, [object()]} | {:error, term()}
+  def list do
+    Git.list_files()
+  end
+
+  @doc """
+  Return the current source for `object`.
+  """
+  @doc group: "Querying"
+  @spec source(object()) :: {:ok, binary()} | {:error, term()}
+  def source(object) when is_binary(object) do
+    with :ok <- validate_path(object) do
+      File.read(Path.join(root(), object))
+    end
+  end
+
+  @type history :: %{revisions: [revision()], pending: non_neg_integer()}
+
+  @type revision :: %{
+          required(:sha) => String.t(),
+          required(:timestamp) => integer(),
+          required(:message) => String.t(),
+          optional(:diff) => String.t()
+        }
 
   @doc """
   Return the revision history for `object`.
 
   Returns a map with two keys:
 
-  - `:revisions`: the messages of all revisions to `object`, in
-    reverse chronological order.
+  - `:revisions`: all revisions to `object` in reverse chronological order,
+    each as `%{sha, timestamp, message, diff}` (see `t:revision/0`).
 
-  - `:pending`: indicates whether the most recent change to `object`
-    is a pending edit (aka whether there are changes that have not
-    been merged into a revision yet).
+  - `:pending`: the number of edits made since the last revision (i.e.
+    pending changes that have not been squashed into a revision yet).
 
   """
-  @spec history(Path.t()) :: {:ok, history()} | {:error, term()}
+  @doc group: "Querying"
+  @spec history(object()) :: {:ok, history()} | {:error, term()}
   def history(object) when is_binary(object) do
     with :ok <- validate_path(object),
-         {:ok, subjects} <- Git.log_subjects(object) do
+         {:ok, entries} <- Git.log_entries(object) do
       revisions =
-        subjects
-        |> Enum.filter(&String.starts_with?(&1, "(revision) "))
-        |> Enum.map(fn subject ->
-          subject |> String.split(" ", parts: 3) |> Enum.at(2, "")
+        entries
+        |> Enum.filter(&revision?/1)
+        |> Enum.map(fn entry ->
+          %{sha:
+            entry.sha,
+            timestamp: entry.timestamp,
+            message: extract_message(entry.subject)
+          }
         end)
 
-      pending =
-        case subjects do
-          [head | _] -> not String.starts_with?(head, "(revision) ")
-          [] -> false
-        end
-
-      {:ok, ~m{revisions, pending}}
+      {:ok, ~m{revisions, pending: count_pending(entries)}}
     end
   end
 
-  defp resolve_squash_target(object) do
-    case Git.find_last_commit("revision", object) do
-      {:ok, ""} ->
-        with {:ok, initial} <- Git.find_initial_commit(), do: {:ok, "#{initial}^"}
-
-      {:ok, sha} ->
-        Git.rev_parse("#{sha}^")
-
-      err ->
-        err
-    end
-  end
-
-  defp validate_path(object) do
-    cond do
-      String.contains?(object, "..") -> {:error, :illegal}
-      String.contains?(object, "'") -> {:error, :illegal}
-      true -> :ok
-    end
-  end
-
-  defp validate_changed(path, patch) do
-    if File.exists?(path) do
-      with {:ok, contents} <- File.read(path) do
-        if String.trim(contents) == String.trim(patch) do
-          {:error, :unchanged}
-        else
-          :ok
-        end
+  defp count_pending(entries) do
+    Enum.reduce_while(entries, 0, fn entry, acc ->
+      cond do
+        revision?(entry) -> {:halt, acc}
+        edit?(entry) -> {:cont, acc + 1}
+        true -> {:cont, acc}
       end
-    else
-      :ok
+    end)
+  end
+
+  defp edit?(~m{subject}), do: String.starts_with?(subject, "(edit) ")
+  defp revision?(~m{subject}), do: String.starts_with?(subject, "(revision) ")
+
+  defp extract_message(subject) do
+    subject |> String.split(" ", parts: 3) |> Enum.at(2, "")
+  end
+
+  @typedoc """
+  Hash reference uniquely identifying a single edit or revision.
+  """
+  @type sha :: String.t()
+
+  @doc """
+  Return the revision details identified by `sha`, including the diff.
+  """
+  @doc group: "Querying"
+  @spec revision(sha()) :: {:ok, revision()} | {:error, term()}
+  def revision(sha) when is_binary(sha) do
+    with {:ok, info} <- Git.show_info(sha),
+         {:ok, diff} <- Git.show_diff(sha) do
+      {:ok,
+       %{
+         sha: info.sha,
+         timestamp: info.timestamp,
+         message: extract_message(info.subject),
+         diff: diff
+       }}
     end
   end
 end

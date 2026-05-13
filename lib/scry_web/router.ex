@@ -2,7 +2,7 @@ defmodule ScryWeb.Router do
   @moduledoc false
   use ScryWeb, :router
 
-  import Nym
+  import ScryWeb.Auth
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -22,7 +22,6 @@ defmodule ScryWeb.Router do
     pipe_through :browser
 
     get "/", LandingController, :landing
-    get "/login", LandingController, :login
   end
 
   scope "/api", ScryWeb do
@@ -34,5 +33,16 @@ defmodule ScryWeb.Router do
 
     # Here for legacy reasons (backward-compatibility, yay!)
     post "/webhook/:token", APIController, :webhook
+  end
+
+  scope "/", ScryWeb do
+    pipe_through [:browser, :require_auth]
+
+    get "/login", DashboardController, :login
+    get "/list", DashboardController, :list
+    get "/add", DashboardController, :add
+    get "/object/:object", DashboardController, :object
+    get "/revision/:sha", DashboardController, :revision
+    post "/delete/:object", DashboardController, :delete
   end
 end

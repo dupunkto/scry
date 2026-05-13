@@ -1,0 +1,15 @@
+<header>
+  <h1><a href={~p"/"}>Scry <small>v{Application.spec(:scry, :vsn) || "None"}</small></a></h1>
+</header>
+
+<main>
+  <header class="bar">
+    <h2>Objects</h2>
+    <a class="button" href={~p"/add"}>Add object</a>
+  </header>
+  <ul>
+    <li :for={object <- @objects}>
+      <a href={~p"/object/#{object}"}>{object}</a>
+    </li>
+  </ul>
+</main>

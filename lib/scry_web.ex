@@ -19,6 +19,15 @@ defmodule ScryWeb do
     end
   end
 
+  def plug do
+    quote do
+      import Plug.Conn
+      import Phoenix.Controller
+      
+      unquote(verified_routes())
+    end
+  end
+
   def controller do
     quote do
       use Phoenix.Controller,

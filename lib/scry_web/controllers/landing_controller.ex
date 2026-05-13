@@ -3,6 +3,10 @@ defmodule ScryWeb.LandingController do
   use ScryWeb, :controller
 
   def landing(conn, _params) do
-    render(conn, :landing)
+    if conn.assigns[:current_user] do
+      redirect(conn, to: ~p"/list")
+    else
+      render(conn, :landing)
+    end
   end
 end

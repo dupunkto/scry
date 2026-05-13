@@ -1,0 +1,15 @@
+<header>
+  <h1><a href={~p"/"}>Scry <small>v{Application.spec(:scry, :vsn) || "None"}</small></a></h1>
+</header>
+
+<main>
+  <h2>Add object</h2>
+  <p>
+    Objects appear here automatically the once they are tracked via the API.
+  </p>
+
+  <h3>Example</h3>
+  <pre><code>curl -X POST {ScryWeb.Endpoint.url()}/api/track/SLUG \
+  --data-urlencode "source_code=$(cat path/to/file)" \
+  --data-urlencode "token=$TOKEN"</code></pre>
+</main>

@@ -1,0 +1,36 @@
+<header>
+  <h1><a href={~p"/"}>Scry <small>v{Application.spec(:scry, :vsn) || "None"}</small></a></h1>
+  <small>object/{@object}</small>
+</header>
+
+<main>
+  <header class="bar">
+    <h2>Source</h2>
+    <form
+      method="post"
+      action={~p"/delete/#{@object}"}
+      onsubmit={"return confirm('Delete #{@object}?')"}
+    >
+      <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
+      <button class="button" type="submit">Delete</button>
+    </form>
+  </header>
+  <pre><code>{@source}</code></pre>
+
+  <header class="bar">
+    <h2>Revisions</h2>
+  </header>
+  <ul>
+    <li :if={@history.pending > 0} class="pending">
+      {@history.pending} unsquashed edits
+    </li>
+    <li :for={revision <- @history.revisions}>
+      <a href={~p"/revision/#{revision.sha}"}>
+        {revision.message}
+        <time datetime={DateTime.from_unix!(revision.timestamp) |> DateTime.to_iso8601()}>
+          {date(revision.timestamp)}
+        </time>
+      </a>
+    </li>
+  </ul>
+</main>

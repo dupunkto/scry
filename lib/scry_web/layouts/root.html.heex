@@ -16,7 +16,7 @@
 
     <link rel="canonical" href="https://scry.dupunkto.org" />
 
-    <%= if assigns[:authenticated?] do %>
+    <%= if assigns[:current_user] do %>
       <link rel="stylesheet" href="https://cdn.geheimesite.nl/tools.css" />
       <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
     <% else %>

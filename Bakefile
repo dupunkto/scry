@@ -1,12 +1,27 @@
 #!/bin/bash
 
+export ROOT=git
+export AUTH_PASSWORD=pannekoek
+export TOKEN=oompaloompadoompadeedo
+
 setup() {
 	mix deps.get
 	mix deps.compile
+	git init $ROOT
 }
 
 serve() {
   mix phx.server
+}
+
+clean() {
+	rm -rf $ROOT/**/*
+	rm -rf $ROOT/.git
+	git init $ROOT
+}
+
+seeds() {
+  priv/scripts/seeds.sh
 }
 
 deploy() {
