@@ -15,7 +15,13 @@
     </.live_title>
 
     <link rel="canonical" href="https://scry.dupunkto.org" />
-    <link rel="stylesheet" href="https://cdn.geheimesite.nl/landing.css" type="text/css" />
+
+    <%= if assigns[:authenticated?] do %>
+      <link rel="stylesheet" href="https://cdn.geheimesite.nl/tools.css" />
+      <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
+    <% else %>
+      <link rel="stylesheet" href="https://cdn.geheimesite.nl/landing.css" />
+    <% end %>
   </head>
   <body>
     {@inner_content}
