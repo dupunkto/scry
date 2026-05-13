@@ -1,0 +1,23 @@
+#!/bin/bash
+
+setup() {
+	mix deps.get
+	mix deps.compile
+}
+
+serve() {
+  mix phx.server
+}
+
+deploy() {
+	lift deploy scry
+}
+
+publish() {
+	mix docs
+	lift deploy docs
+}
+
+release() {
+	mix hex.publish
+}
