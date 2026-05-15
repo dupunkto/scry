@@ -69,8 +69,8 @@ ENV MIX_ENV="prod"
 
 # Fix ownership issues with mounted git repos
 RUN git config --system --add safe.directory '*'
-RUN git config --global user.email "scry@dupunkto.org"
-RUN git config --global user.name "Scry"
+RUN git config --system user.email "scry@dupunkto.org"
+RUN git config --system user.name "Scry"
 
 # Only copy the final release from the build stage.
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/scry ./
