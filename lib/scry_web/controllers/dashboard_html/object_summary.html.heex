@@ -1,0 +1,53 @@
+<style>
+  section h3 {
+    text-transform: lowercase;
+  }
+
+  button {
+    max-width: fit-content;
+    margin-top: 1em;
+  }
+</style>
+
+<main>
+  <header class="bar has-nav nav-top">
+    <h2><code>{@object}</code></h2>
+    <nav>
+      <a class="selected" href={~p"/object/#{@object}"}>Summary</a>
+      <a href={~p"/object/#{@object}/source"}>Source</a>
+      <a href={~p"/object/#{@object}/log"}>Log</a>
+    </nav>
+  </header>
+
+  <section>
+    <h3 class="split">
+      Recent changes
+      <small>{Enum.count(@history.revisions)} revisions</small>
+    </h3>
+    <ul>
+      <li :if={@history.pending > 0} class="pending">
+        {@history.pending} unsquashed edits
+      </li>
+      <li :for={revision <- Enum.take(@history.revisions, 5)}>
+        <a href={~p"/rev/#{revision.sha}"}>
+          {revision.message}
+          <time datetime={DateTime.from_unix!(revision.timestamp) |> DateTime.to_iso8601()}>
+            {date(revision.timestamp)}
+          </time>
+        </a>
+      </li>
+    </ul>
+    <p :if={Enum.take(@history.revisions, 5) != @history.revisions} class="more">
+      <a href={~p"/object/#{@object}/log"}>[ more ]</a>
+    </p>
+  </section>
+
+  <form
+    method="post"
+    action={~p"/delete/#{@object}"}
+    onsubmit={"return confirm('Delete #{@object}?')"}
+  >
+    <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
+    <button class="button" type="submit">Delete</button>
+  </form>
+</main>

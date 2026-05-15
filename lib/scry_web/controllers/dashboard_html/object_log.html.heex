@@ -1,0 +1,26 @@
+<main>
+  <header class="bar has-nav nav-top">
+    <h2><code>{@object}</code></h2>
+    <nav>
+      <a href={~p"/object/#{@object}"}>Summary</a>
+      <a href={~p"/object/#{@object}/source"}>Source</a>
+      <a class="selected" href={~p"/object/#{@object}/log"}>Log</a>
+    </nav>
+  </header>
+
+  <section>
+    <ul>
+      <li :if={@history.pending > 0} class="pending">
+        {@history.pending} unsquashed edits
+      </li>
+      <li :for={revision <- @history.revisions}>
+        <a href={~p"/rev/#{revision.sha}"}>
+          {revision.message}
+          <time datetime={DateTime.from_unix!(revision.timestamp) |> DateTime.to_iso8601()}>
+            {date(revision.timestamp)}
+          </time>
+        </a>
+      </li>
+    </ul>
+  </section>
+</main>

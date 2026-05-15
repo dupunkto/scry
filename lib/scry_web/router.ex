@@ -39,10 +39,17 @@ defmodule ScryWeb.Router do
     pipe_through [:browser, :require_auth]
 
     get "/login", DashboardController, :login
-    get "/list", DashboardController, :list
+    get "/browse", DashboardController, :browse
     get "/add", DashboardController, :add
-    get "/object/:object", DashboardController, :object
-    get "/revision/:sha", DashboardController, :revision
-    post "/delete/:object", DashboardController, :delete
+
+    # Objects
+    get "/object/:object", DashboardController, :summary
+    get "/object/:object/source", DashboardController, :source
+    get "/object/:object/log", DashboardController, :log
+    post "/object/:object/delete", DashboardController, :delete
+
+    # Revisions
+    get "/rev/:sha", DashboardController, :revision
+    get "/rev/:sha/source", DashboardController, :source
   end
 end

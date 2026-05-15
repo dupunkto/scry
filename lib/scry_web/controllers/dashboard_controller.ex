@@ -6,9 +6,9 @@ defmodule ScryWeb.DashboardController do
     redirect(conn, to: ~p"/")
   end
 
-  def list(conn, _params) do
+  def browse(conn, _params) do
     case Scry.list() do
-      {:ok, objects} -> render(conn, :list, objects: objects)
+      {:ok, objects} -> render(conn, :browse, objects: objects)
       {:error, reason} -> serve_error(conn, reason)
     end
   end
@@ -17,25 +17,44 @@ defmodule ScryWeb.DashboardController do
     render(conn, :add)
   end
 
-  def object(conn, %{"object" => object}) do
-    with {:ok, source} <- Scry.source(object),
-         {:ok, history} <- Scry.history(object) do
-      render(conn, :object, object: object, source: source, history: history)
-    else
+  def summary(conn, %{"object" => object}) do
+    case Scry.history(object) do
+      {:ok, history} -> render(conn, :object_summary, object: object, history: history)
+      {:error, reason} -> serve_error(conn, reason)
+    end
+  end
+
+  def source(conn, %{"object" => object}) do
+    case Scry.source(object) do
+      {:ok, source} -> render(conn, :object_source, object: object, source: source)
+      {:error, reason} -> serve_error(conn, reason)
+    end
+  end
+
+  def source(conn, %{"sha" => sha}) do
+    case Scry.revision(sha) do
+      {:ok, revision} -> render(conn, :revision_source, revision: revision)
+      {:error, reason} -> serve_error(conn, reason)
+    end
+  end
+
+  def log(conn, %{"object" => object}) do
+    case Scry.history(object) do
+      {:ok, history} -> render(conn, :object_log, object: object, history: history)
       {:error, reason} -> serve_error(conn, reason)
     end
   end
 
   def revision(conn, %{"sha" => sha}) do
     case Scry.revision(sha) do
-      {:ok, revision} -> render(conn, :revision, revision: revision)
+      {:ok, revision} -> render(conn, :revision_diff, revision: revision)
       {:error, reason} -> serve_error(conn, reason)
     end
   end
 
   def delete(conn, %{"object" => object}) do
     case Scry.delete(object) do
-      {:ok, :deleted} -> redirect(conn, to: ~p"/list")
+      {:ok, :deleted} -> redirect(conn, to: ~p"/browse")
       {:error, reason} -> serve_error(conn, reason)
     end
   end

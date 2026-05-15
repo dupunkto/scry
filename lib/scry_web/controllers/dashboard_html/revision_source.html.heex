@@ -1,0 +1,29 @@
+<style>
+  hgroup h2 small,
+  hgroup h2 time {
+    font-size: 0.7em;
+  }
+</style>
+
+<main>
+  <header>
+    <hgroup>
+      <h2 class="split">
+        {@revision.message}
+        <time datetime={DateTime.from_unix!(@revision.timestamp) |> DateTime.to_iso8601()}>
+          {date(@revision.timestamp)}</time>
+      </h2>
+    </hgroup>
+
+    <div class="has-nav nav-bottom">
+      <b>rev</b>: <code title={@revision.sha}>{@revision.sha}</code>
+    </div>
+
+    <nav>
+      <a href={~p"/rev/#{@revision.sha}"}>diff</a>
+      <a class="selected" href={~p"/rev/#{@revision.sha}/source"}>source</a>
+    </nav>
+  </header>
+
+  <pre><code>{@revision.source}</code></pre>
+</main>

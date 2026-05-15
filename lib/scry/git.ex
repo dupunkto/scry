@@ -216,9 +216,23 @@ defmodule Scry.Git do
     end
   end
 
+  def show_file(sha, file) do
+    case git(["show", "#{sha}:#{file}"]) do
+      {output, 0} -> {:ok, output}
+      {output, _} -> {:error, String.trim(output)}
+    end
+  end
+
   def list_files do
     case git(["ls-files"]) do
       {output, 0} -> {:ok, String.split(output, "\n", trim: true)}
+      {output, _} -> {:error, String.trim(output)}
+    end
+  end
+
+  def last_modified(file) do
+    case git(["log", "-1", "--format=%ct", "--", file]) do
+      {output, 0} -> {:ok, String.to_integer(String.trim(output))}
       {output, _} -> {:error, String.trim(output)}
     end
   end

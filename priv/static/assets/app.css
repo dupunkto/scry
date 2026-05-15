@@ -49,6 +49,68 @@ ul li time {
   opacity: .8;
 }
 
-p time {
-  font-weight: bold;
+.split {
+  margin-bottom: 0.25em;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.split small,
+.split time {
+  font-weight: normal;
+}
+
+.has-nav {
+  align-items: flex-end;
+}
+
+.nav-bottom {
+  margin-top: -1em;
+  background: light-dark(#f1f1f1, #2b2b33);
+  padding: 0 10px;
+}
+
+.nav-top {
+  border-bottom: 5px solid light-dark(#f1f1f1, #2b2b33);
+}
+
+nav {
+  display: flex;
+  margin-right: 1em;
+  justify-content: flex-end;
+}
+
+nav a {
+  text-transform: lowercase;
+  text-decoration: none;
+  padding: 0 1rem;
+  padding-bottom: 3px;
+  border-color: light-dark(#dee2e6, #2b2b33) light-dark(#dee2e6, #2b2b33) light-dark(#fff, #000);
+  text-transform: lowercase;
+  line-height: 17px;
+}
+
+nav a.selected, nav a:hover {
+  color: light-dark(#000, #fff);
+  background: light-dark(#f1f1f1, #2b2b33);
+}
+
+.more {
+  margin-top: 0.25em;
+}
+
+.more a {
+  text-decoration: none;
+}
+
+hgroup h1,
+hgroup h2,
+hgroup h3 {
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+hgroup p {
+  margin-top: 0.5em;
 }

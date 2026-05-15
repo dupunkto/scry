@@ -1,0 +1,14 @@
+<main>
+  <header class="bar has-nav nav-top">
+    <h2><code>{@object}</code></h2>
+    <nav>
+      <a href={~p"/object/#{@object}"}>Summary</a>
+      <a class="selected" href={~p"/object/#{@object}/source"}>Source</a>
+      <a href={~p"/object/#{@object}/log"}>Log</a>
+    </nav>
+  </header>
+
+  <section>
+    <code><pre>{@source}</pre></code>
+  </section>
+</main>

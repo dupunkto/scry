@@ -279,7 +279,8 @@ defmodule Scry do
           required(:sha) => String.t(),
           required(:timestamp) => integer(),
           required(:message) => String.t(),
-          optional(:diff) => String.t()
+          optional(:diff) => String.t(),
+          optional(:source) => String.t()
         }
 
   @doc """
@@ -333,19 +334,23 @@ defmodule Scry do
   @type sha :: String.t()
 
   @doc """
-  Return the revision details identified by `sha`, including the diff.
+  Return the revision details identified by `sha`,
+  including the diff and source code.
   """
   @doc group: "Querying"
   @spec revision(sha()) :: {:ok, revision()} | {:error, term()}
   def revision(sha) when is_binary(sha) do
     with {:ok, info} <- Git.show_info(sha),
-         {:ok, diff} <- Git.show_diff(sha) do
+         {:ok, diff} <- Git.show_diff(sha),
+         {:ok, [{_status, file} | _]} <- Git.changed_files(sha),
+         {:ok, source} <- Git.show_file(sha, file) do
       {:ok,
        %{
          sha: info.sha,
          timestamp: info.timestamp,
          message: extract_message(info.subject),
-         diff: diff
+         diff: diff,
+         source: source
        }}
     end
   end

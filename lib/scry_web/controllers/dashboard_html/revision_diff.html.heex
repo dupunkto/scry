@@ -1,0 +1,85 @@
+<link
+  rel="stylesheet"
+  type="text/css"
+  href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"
+/>
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css"
+  media="screen and (prefers-color-scheme: light)"
+/>
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css"
+  media="screen and (prefers-color-scheme: dark)"
+/>
+
+<style>
+  hgroup h2 small,
+  hgroup h2 time {
+    font-size: 0.7em;
+  }
+
+  .diff, .d2h-wrapper {
+    margin-top: 1.5em;
+  }
+</style>
+
+<main>
+  <header>
+    <hgroup>
+      <h2 class="split">
+        {@revision.message}
+        <time datetime={DateTime.from_unix!(@revision.timestamp) |> DateTime.to_iso8601()}>
+          {date(@revision.timestamp)}</time>
+      </h2>
+    </hgroup>
+
+    <div class="has-nav nav-bottom">
+      <b>rev</b>: <code title={@revision.sha}>{@revision.sha}</code>
+    </div>
+
+    <nav>
+      <a class="selected" href={~p"/rev/#{@revision.sha}"}>diff</a>
+      <a href={~p"/rev/#{@revision.sha}/source"}>source</a>
+    </nav>
+  </header>
+
+  <pre class="diff"><code>{@revision.diff}</code></pre>
+</main>
+
+<script
+  type="text/javascript"
+  src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html-ui.min.js"
+></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const originElement = document.querySelector(".diff");
+    const targetElement = document.createElement("div");
+    const containerElement = document.querySelector("main");
+
+    // Fix to prevent overflow
+    targetElement.style.maxWidth = "100%";
+
+    // Insert target div for for rendering diff2html
+    const code = originElement.innerText;
+    containerElement.insertBefore(targetElement, originElement);
+
+    // Remove original element from page
+    originElement.remove();
+    delete originElement;
+
+    const diff = new Diff2HtmlUI(targetElement, code, {
+      synchronisedScroll: true,
+      highlight: true,
+      drawFileList: false,
+      fileContentToggle: false,
+      stickyFileHeaders: false,
+      outputFormat: 'side-by-side',
+      colorScheme: 'auto'
+    });
+
+    diff.draw();
+  });
+</script>
