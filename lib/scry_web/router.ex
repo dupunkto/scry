@@ -24,15 +24,19 @@ defmodule ScryWeb.Router do
     get "/", LandingController, :landing
   end
 
+  # Here for legacy reasons (backward-compatibility, yay!)
+  scope "/", ScryWeb do
+    pipe_through :api
+
+    post "/webhook/:token", APIController, :webhook
+  end
+
   scope "/api", ScryWeb do
     pipe_through :api
 
     post "/track/:object", APIController, :track
     post "/squash/:object", APIController, :squash
     get "/history/:object", APIController, :history
-
-    # Here for legacy reasons (backward-compatibility, yay!)
-    post "/webhook/:token", APIController, :webhook
   end
 
   scope "/", ScryWeb do
