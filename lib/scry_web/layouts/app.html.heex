@@ -1,4 +1,4 @@
-<header>
+<header :if={assigns[:current_user]}>
   <h1><a href={~p"/"}>Scry <small>v{Application.spec(:scry, :vsn) || "None"}</small></a></h1>
 </header>
 
