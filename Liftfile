@@ -1,4 +1,4 @@
-host: november.geheimesite.nl
+host: nov
 services:
 - name: scry
   type: container
