@@ -44,9 +44,10 @@
 
   <form
     method="post"
-    action={~p"/delete/#{@object}"}
+    action={~p"/object/#{@object}"}
     onsubmit={"return confirm('Delete #{@object}?')"}
   >
+    <input type="hidden" name="_method" value="delete" />
     <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
     <button class="button" type="submit">Delete</button>
   </form>

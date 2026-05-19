@@ -50,7 +50,7 @@ defmodule ScryWeb.Router do
     get "/object/:object", DashboardController, :summary
     get "/object/:object/source", DashboardController, :source
     get "/object/:object/log", DashboardController, :log
-    post "/object/:object/delete", DashboardController, :delete
+    delete "/object/:object", DashboardController, :delete
 
     # Revisions
     get "/rev/:sha", DashboardController, :revision
