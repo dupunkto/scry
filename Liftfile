@@ -3,7 +3,6 @@ services:
 - name: scry
   type: container
   image: dupunkto/scry
-  registry: ghcr.io
 - name: docs
   type: static
   src: doc
