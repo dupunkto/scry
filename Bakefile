@@ -1,17 +1,15 @@
 #!/bin/bash
 
+use elixir
+use phoenix
+
 export ROOT=git
 export AUTH_PASSWORD=pannekoek
 export TOKEN=oompaloompadoompadeedo
 
 setup() {
-	mix deps.get
-	mix deps.compile
+	super
 	git init $ROOT
-}
-
-serve() {
-  mix phx.server
 }
 
 clean() {
@@ -26,13 +24,4 @@ seeds() {
 
 deploy() {
 	lift deploy scry
-}
-
-publish() {
-	mix docs
-	lift deploy docs
-}
-
-release() {
-	mix hex.publish
 }
