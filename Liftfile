@@ -1,4 +1,4 @@
-host: nov
+host: nov.dupunk.to
 services:
 - name: scry
   type: container
