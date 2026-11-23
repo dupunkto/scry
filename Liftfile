@@ -1,4 +1,4 @@
-runner: nov.dupunk.to
+cluster: dupunk.to
 services:
 - name: scry
   type: container
